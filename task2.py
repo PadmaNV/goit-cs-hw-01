@@ -128,7 +128,7 @@ class Parser:
             self.error()
 
     def factor(self):
-        """Парсер для 'factor' правил граматики."""
+        """Парсер для 'factor' має відповідати за числа та дужки."""
         token = self.current_token
         if token.type == TokenType.INTEGER:
             self.eat(TokenType.INTEGER)
@@ -142,24 +142,32 @@ class Parser:
             self.error()
 
     def term(self):
-        """Парсер для 'term' правил граматики. У нашому випадку - це цілі числа."""
-        return self.factor()
+        """Парсер для 'term' множення та ділення"""
+        node = self.factor()
+
+        while self.current_token.type in (TokenType.MULTIPLY, TokenType.DIVIDE):
+            token = self.current_token
+            if token.type == TokenType.MULTIPLY:
+                self.eat(TokenType.MULTIPLY)
+                node = BinOp(left=node, op=token, right=self.factor())
+            elif token.type == TokenType.DIVIDE:
+                self.eat(TokenType.DIVIDE)
+                node = BinOp(left=node, op=token, right=self.factor())
+
+        return node
 
     def expr(self):
-        """Парсер для арифметичних виразів."""
+        """Парсер для додавання та віднімання з відповідними змінами для логіки обробки токенів."""
         node = self.term()
 
-        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS, TokenType.MULTIPLY, TokenType.DIVIDE):
+        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
             token = self.current_token
             if token.type == TokenType.PLUS:
                 self.eat(TokenType.PLUS)
+                node = BinOp(left=node, op=token, right=self.term())
             elif token.type == TokenType.MINUS:
                 self.eat(TokenType.MINUS)
-            elif token.type == TokenType.MULTIPLY:
-                self.eat(TokenType.MULTIPLY)
-            elif token.type == TokenType.DIVIDE:
-                self.eat(TokenType.DIVIDE)
-            node = BinOp(left=node, op=token, right=self.term())
+                node = BinOp(left=node, op=token, right=self.term())
 
         return node
 
